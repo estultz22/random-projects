@@ -1,0 +1,257 @@
+#include <iostream>
+#include <fstream>
+#include <cctype>
+#include <iomanip>
+
+using std::cout;
+using std::cin;
+using std::string;
+using std::endl;
+using std::setw;
+using std::setfill;
+
+bool usingInputFile();
+int getArraySize();
+void getArrayContent(string [], int);
+void getInput(int&);
+void displayFContents();
+void writeToFile(string [], int, string);
+bool isValidFileName(string);
+void userChooseFunction(int, bool&);
+string getFileName();
+
+std::ifstream inFile;
+std::ofstream outFile;
+
+int main()
+{
+    bool hasInputFile = usingInputFile(),
+         isAppendToFile = false;
+    string inFileName, outFileName;
+    int choice = 0;
+
+    
+    while (hasInputFile)
+    {   
+        cin.ignore(1, '\n');
+        do
+        {
+            inFileName = getFileName();
+        }while (!isValidFileName(inFileName));
+        cout << endl;
+
+        cout << "Getting file contents now..." << endl;
+
+        inFile.open(inFileName, std::ios::in);
+
+        if (inFile)
+        {
+            cout << "Successfully opened for read: " << inFileName << endl;
+            
+            do
+            {
+                cout << inFileName << " found, what now?";
+                getInput(choice);
+                userChooseFunction(choice, isAppendToFile);
+
+                if (isAppendToFile)
+                {
+                    int asize = getArraySize();
+                    string array[asize];
+
+                    cin.ignore(1000, '\n');
+                    do
+                    {
+                        cout << "What is the file called? Extension must be .txt: ";
+                        cin >> outFileName;
+                    }while (!isValidFileName(outFileName));
+                    
+
+                    getArrayContent(array, asize);
+                    writeToFile(array, asize, outFileName);
+
+                }
+                isAppendToFile = false;
+
+            } while (choice != 4 && choice != 3);   
+        }
+        else
+        {
+            cout << "Could not open/find: " << inFileName << endl;
+        }
+        
+        inFile.close();
+        if (choice == 4)
+            hasInputFile = false;  
+    }
+    if (!hasInputFile && choice == 0)
+    {
+        int asize = getArraySize();
+        string array[asize];
+    }
+
+    return 0;
+}
+
+//asks if the user will use an input file for tv show names
+bool usingInputFile()
+{
+    bool inputFromFile = false;
+    char ask;
+
+    cout << "\nAre you using a file to input show names? \ny/Y for yes, any other for no: ";
+    cin >> ask;
+    cout << endl;
+
+    if(tolower(ask) == 'y')
+    {
+        inputFromFile = true;
+    }
+
+    return inputFromFile;
+}
+
+//tests user input for .txt file extension
+bool isValidFileName(string fileExtensionName)
+{
+    int fileExtDotPos;
+    string fileExtension;
+    const string TEXT_EXT = ".txt";
+    bool isValid = true;
+
+    fileExtDotPos = fileExtensionName.find('.');
+
+    if (fileExtDotPos == string::npos)
+    {
+        cout << "Cannot find .txt";
+        cout << endl;
+        isValid = false;    
+    }     
+    else
+    {
+        fileExtension = fileExtensionName.substr(fileExtDotPos, 4);
+
+        if (fileExtension != TEXT_EXT)
+        {
+            cout << "Invalid file extension!! Try again...";
+            cout << endl;
+            isValid = false;
+        }
+    }
+
+    return isValid;
+}
+
+//directly inputs from keyboard into array and returns array size
+int getArraySize()
+{
+    int arrSize;
+    cout << "How many TV shows do you want appended?: ";
+    cin >> arrSize;
+
+    return arrSize; 
+}
+
+//prints input file contents
+void displayFContents()
+{
+    string currWord;
+    int borderWidth = 30;
+    string returnToMenu;
+
+    cout << setw(borderWidth) << setfill('-') << "" << endl;
+    cout << setw(borderWidth / 2) << setfill(' ') << "All Shows" << endl;
+    cout << setw(borderWidth) << setfill('-') << "" << endl;
+
+    do
+    {
+        getline(inFile, currWord);
+        cout << currWord << endl;
+    }while (!inFile.eof());
+
+    cout << "Press any key to return: ";
+    cin >> returnToMenu;
+
+}
+
+//main menu
+void getInput(int& choiceNum)
+{
+    cout << "\n\n1: Display all Contents\n" 
+    << "2: Copy-paste this file & append more shows to a new file\n" 
+    << "3: Read another file\n" << "4: Quit\n" 
+    << "5: Return to beginning menu: ";
+    cout << endl;
+    cin >> choiceNum;
+}
+
+//a function hub that activates after main menu and has user input as a parameter
+void userChooseFunction(int userChoice, bool& isWritingToFile)
+{
+
+    switch (userChoice)
+    {
+    case 1:
+        displayFContents();
+        break;
+    case 2://write to current file
+        isWritingToFile = true;
+    case 3:
+        break;
+    case 4:
+        cout << "Quitting the program now..";
+        break;
+    case 5:
+        cout << "Returning to beginning now..";
+        cout << endl;
+        main();
+        break;
+    default:
+        break;
+    }
+}
+
+//assigns user input to an array
+void getArrayContent(string arrayToWrite[], int arraySize)
+{
+    cout << endl;
+    cin.ignore();
+
+    for (int index = 0; index < arraySize; index++)
+    {
+        cout << "Enter show number " << index + 1 << ": ";
+        getline(cin, arrayToWrite[index]);
+    }
+
+}
+
+//copies infile to output file and appends array
+void writeToFile(string arrayToWrite[], int arraySize, string nameOutFile)
+{
+    int borderWidth = 30;
+    outFile.open(nameOutFile, std::ios::out);
+
+    outFile << setw(borderWidth) << setfill('-') << "" << endl;
+    outFile << setw(borderWidth / 2) << setfill(' ') << "All Shows" << endl;
+    outFile << setw(borderWidth) << setfill('-') << "" << endl;
+
+    outFile << inFile.rdbuf();
+
+    for (int index = 0; index < arraySize; index++)
+    {
+        outFile << arrayToWrite[index];
+        outFile << endl;
+    }
+    
+    outFile.close();
+}
+
+string getFileName()
+{
+    string fileName;
+
+    cout << "What is the file called? Extension must be .txt: ";
+    getline(cin, fileName);
+
+    return fileName;
+}
